@@ -393,6 +393,11 @@
     }
   }
 
+  function selectEnteredValue(input) {
+    if (input.value === '') return;
+    requestAnimationFrame(() => input.select());
+  }
+
   function restoreZeroOnBlur(input) {
     resizeInput(input);
   }
@@ -453,11 +458,15 @@
   $usd.addEventListener('focus', () => {
     activeField = 'usd';
     clearDefaultValue($usd);
+    selectEnteredValue($usd);
   });
   $rub.addEventListener('focus', () => {
     activeField = 'rub';
     clearDefaultValue($rub);
+    selectEnteredValue($rub);
   });
+  $usd.addEventListener('click', () => selectEnteredValue($usd));
+  $rub.addEventListener('click', () => selectEnteredValue($rub));
   $usd.addEventListener('blur', () => restoreZeroOnBlur($usd));
   $rub.addEventListener('blur', () => restoreZeroOnBlur($rub));
   $usd.addEventListener('input', () => {
