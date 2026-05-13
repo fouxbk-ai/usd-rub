@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>USD → RUB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0E0E10;
+    --bg-2: #16161A;
+    --cream: #EFE9DC;
+    --cream-dim: #D8D8D8;
+    --cream-faint: #9A9A9A;
+    --gold: #D4AF78;
+    --gold-dim: #8B7548;
+    --line: #26252A;
+    --green: #8FB07B;
+    --red: #C97A6E;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--cream);
+    font-family: 'Fraunces', Georgia, serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  /* subtle grain texture */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(ellipse at top, rgba(212,175,120,0.05), transparent 60%),
+      radial-gradient(ellipse at bottom right, rgba(201,122,110,0.04), transparent 50%);
+    z-index: 0;
+  }
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    z-index: 1;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  main {
+    position: relative;
+    z-index: 2;
+    height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    padding: 32px 48px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 18px;
+  }
+  .brand {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--cream-dim);
+  }
+  .brand .dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: var(--gold);
+    border-radius: 50%;
+    margin: 0 8px 1px 8px;
+    vertical-align: middle;
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+  .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--cream-faint);
+    text-align: center;
+  }
+
+  /* BODY */
+  .body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    padding: 40px 0;
+  }
+
+  .rate-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    color: var(--cream-dim);
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 18px;
+    opacity: 0;
+    animation: fadeIn 0.8s ease 0.3s forwards;
+  }
+  .rate-line .rate-value {
+    color: var(--gold);
+    font-weight: 500;
+  }
+  .rate-line .sep { color: var(--cream-faint); margin: 0 10px; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .field {
+    position: relative;
+    width: 100%;
+    max-width: 820px;
+    text-align: center;
+  }
+  .field-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--cream-faint);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .field-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 14px;
+    width: 100%;
+  }
+  .sym {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-size: 56px;
+    color: var(--cream-faint);
+    font-feature-settings: "ss01";
+    line-height: 1;
+  }
+  #usd,
+  #rub {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--cream);
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: 300;
+    font-size: 96px;
+    font-variation-settings: "opsz" 144;
+    line-height: 1;
+    width: 1.1ch;
+    min-width: 1.1ch;
+    max-width: calc(100vw - 190px);
+    text-align: center;
+    caret-color: var(--gold);
+    font-variant-numeric: tabular-nums;
+  }
+  #usd::placeholder,
+  #rub::placeholder { color: var(--cream-faint); }
+  #rub::placeholder { color: var(--gold); }
+  #usd:hover::placeholder,
+  #rub:hover::placeholder { color: var(--cream); }
+  #usd:focus::placeholder,
+  #rub:focus::placeholder,
+  #usd:focus:hover::placeholder,
+  #rub:focus:hover::placeholder { color: transparent; }
+  #usd::-webkit-outer-spin-button,
+  #usd::-webkit-inner-spin-button,
+  #rub::-webkit-outer-spin-button,
+  #rub::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #usd,
+  #rub { -moz-appearance: textfield; }
+
+  .arrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--gold-dim);
+    letter-spacing: 0.3em;
+    margin: 4px 0 0 0;
+  }
+
+  .output .sym { color: var(--gold-dim); }
+  #rub {
+    color: var(--gold);
+    transition: opacity 0.18s ease;
+  }
+  #rub:hover { color: var(--cream); }
+  #rub.flash { opacity: 0.4; }
+
+  /* FOOTER */
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cream-faint);
+  }
+  .footer button {
+    background: transparent;
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    padding: 6px 14px;
+    font-family: inherit;
+    font-size: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .footer button:hover {
+    border-color: var(--line);
+    color: var(--cream-dim);
+  }
+  .footer-actions {
+    display: flex;
+    gap: 10px;
+  }
+  /* error state */
+  .error #usd { color: var(--red); }
+  .error .rate-line .rate-value { color: var(--red); }
+
+  /* responsive */
+  @media (max-width: 600px) {
+    main { padding: 20px 20px; }
+    #usd, #rub { font-size: 64px; max-width: calc(100vw - 98px); }
+    .sym { font-size: 38px; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+  <header class="header">
+    <div class="brand">USD <span class="dot"></span> RUB</div>
+    <div class="meta" id="meta">загрузка курса…</div>
+  </header>
+
+  <section class="body">
+    <div class="rate-line" id="rateLine">
+      1 $ <span class="sep">=</span> <span class="rate-value" id="rateVal">—</span> ₽
+    </div>
+
+    <div class="field input">
+      <div class="field-label">вы платите</div>
+      <div class="field-row">
+        <input id="usd" type="text" inputmode="decimal" placeholder="0" autocomplete="off">
+        <span class="sym">$</span>
+      </div>
+    </div>
+
+    <div class="arrow">↓</div>
+
+    <div class="field output">
+      <div class="field-label">вы получаете</div>
+      <div class="field-row">
+        <input id="rub" type="text" inputmode="decimal" placeholder="0" autocomplete="off">
+        <span class="sym">₽</span>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <span id="source">источник: —</span>
+    <div class="footer-actions">
+      <button id="reset">сбросить</button>
+      <button id="refresh">обновить</button>
+    </div>
+  </footer>
+
+</main>
+
+<script>
+  const $usd = document.getElementById('usd');
+  const $rub = document.getElementById('rub');
+  const $rateVal = document.getElementById('rateVal');
+  const $meta = document.getElementById('meta');
+  const $source = document.getElementById('source');
+  const $refresh = document.getElementById('refresh');
+  const $reset = document.getElementById('reset');
+  const $body = document.body;
+
+  let rate = null;
+  let activeField = 'usd';
+
+  const fmtRub = n =>
+    new Intl.NumberFormat('ru-RU', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(n);
+
+  const fmtRate = n =>
+    new Intl.NumberFormat('ru-RU', {
+      minimumFractionDigits: 4,
+      maximumFractionDigits: 4
+    }).format(n);
+
+  const fmtUsd = n =>
+    new Intl.NumberFormat('ru-RU', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(n);
+
+  const parseAmount = value =>
+    parseFloat(String(value)
+      .replace(/\s/g, '')
+      .replace(',', '.')
+      .replace(/[^0-9.]/g, ''));
+
+  function resizeInput(input) {
+    const length = Math.max(input.value.length, input.placeholder.length, 1);
+    input.style.width = `${Math.min(length + 0.65, 18)}ch`;
+  }
+
+  function resizeInputs() {
+    resizeInput($usd);
+    resizeInput($rub);
+  }
+
+  const fmtTime = d => {
+    const pad = x => String(x).padStart(2, '0');
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  function updateFromUsd() {
+    if (rate == null) { $rub.value = '—'; return; }
+    const v = parseAmount($usd.value);
+    if (!isFinite(v) || $usd.value === '') {
+      $rub.value = '';
+      resizeInput($rub);
+      return;
+    }
+    $rub.classList.add('flash');
+    requestAnimationFrame(() => {
+      $rub.value = fmtRub(v * rate);
+      resizeInput($rub);
+      requestAnimationFrame(() => $rub.classList.remove('flash'));
+    });
+  }
+
+  function updateFromRub() {
+    if (rate == null) { $usd.value = '—'; return; }
+    const v = parseAmount($rub.value);
+    if (!isFinite(v) || $rub.value === '') {
+      $usd.value = '';
+      resizeInput($usd);
+      return;
+    }
+    $usd.value = fmtUsd(v / rate);
+    resizeInput($usd);
+  }
+
+  function update() {
+    if (activeField === 'rub') updateFromRub();
+    else updateFromUsd();
+  }
+
+  function clearDefaultValue(input) {
+    if (input.value === '0' || input.value === '0,00' || input.value === '—') {
+      input.value = '';
+      resizeInput(input);
+    }
+  }
+
+  function restoreZeroOnBlur(input) {
+    resizeInput(input);
+  }
+
+  function resetConverter() {
+    activeField = 'usd';
+    $usd.value = '';
+    $rub.value = '';
+    resizeInputs();
+    $usd.blur();
+    $rub.blur();
+  }
+
+  async function loadCBR() {
+    const r = await fetch('https://www.cbr-xml-daily.ru/daily_json.js', { cache: 'no-store' });
+    if (!r.ok) throw new Error('CBR HTTP ' + r.status);
+    const d = await r.json();
+    return {
+      rate: d.Valute.USD.Value,
+      source: 'ЦБ РФ',
+      time: new Date(d.Date)
+    };
+  }
+
+  async function loadFallback() {
+    const r = await fetch('https://open.er-api.com/v6/latest/USD', { cache: 'no-store' });
+    if (!r.ok) throw new Error('Fallback HTTP ' + r.status);
+    const d = await r.json();
+    return {
+      rate: d.rates.RUB,
+      source: 'open.er-api.com',
+      time: new Date(d.time_last_update_utc)
+    };
+  }
+
+  async function loadRate() {
+    $body.classList.remove('error');
+    $meta.textContent = 'загрузка курса…';
+    try {
+      let info;
+      try { info = await loadCBR(); }
+      catch { info = await loadFallback(); }
+
+      rate = info.rate;
+      $rateVal.textContent = fmtRate(info.rate);
+      $source.textContent = `источник: ${info.source}`;
+      $meta.textContent = `обновлено ${fmtTime(info.time)}`;
+      update();
+    } catch (e) {
+      rate = null;
+      $body.classList.add('error');
+      $rateVal.textContent = 'нет связи';
+      $meta.textContent = 'ошибка сети';
+      $source.textContent = 'источник: —';
+    }
+  }
+
+  $usd.addEventListener('focus', () => {
+    activeField = 'usd';
+    clearDefaultValue($usd);
+  });
+  $rub.addEventListener('focus', () => {
+    activeField = 'rub';
+    clearDefaultValue($rub);
+  });
+  $usd.addEventListener('blur', () => restoreZeroOnBlur($usd));
+  $rub.addEventListener('blur', () => restoreZeroOnBlur($rub));
+  $usd.addEventListener('input', () => {
+    activeField = 'usd';
+    resizeInput($usd);
+    updateFromUsd();
+  });
+  $rub.addEventListener('input', () => {
+    activeField = 'rub';
+    resizeInput($rub);
+    updateFromRub();
+  });
+  $reset.addEventListener('click', resetConverter);
+  $refresh.addEventListener('click', loadRate);
+  // refresh hourly
+  setInterval(loadRate, 60 * 60 * 1000);
+
+  loadRate();
+  resizeInputs();
+</script>
+</body>
+</html>
