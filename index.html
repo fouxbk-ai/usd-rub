@@ -107,10 +107,10 @@
   .body {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     gap: 14px;
-    padding: 40px 0;
+    padding: 16vh 0 40px;
   }
 
   .rate-line {
@@ -247,6 +247,12 @@
     display: flex;
     gap: 10px;
   }
+  .header .footer-actions {
+    justify-content: flex-end;
+  }
+  .footer .meta {
+    letter-spacing: 0.18em;
+  }
   /* error state */
   .error #usd { color: var(--red); }
   .error .rate-line .rate-value { color: var(--red); }
@@ -254,6 +260,8 @@
   /* responsive */
   @media (max-width: 600px) {
     main { padding: 20px 20px; }
+    .body { padding-top: 12vh; }
+    .header, .footer { gap: 14px; }
     #usd, #rub { font-size: 64px; max-width: calc(100vw - 98px); }
     .sym { font-size: 38px; }
   }
@@ -264,7 +272,10 @@
 
   <header class="header">
     <div class="brand">USD <span class="dot"></span> RUB</div>
-    <div class="meta" id="meta">загрузка курса…</div>
+    <div class="footer-actions">
+      <button id="reset">сбросить</button>
+      <button id="refresh">обновить</button>
+    </div>
   </header>
 
   <section class="body">
@@ -293,10 +304,7 @@
 
   <footer class="footer">
     <span id="source">источник: —</span>
-    <div class="footer-actions">
-      <button id="reset">сбросить</button>
-      <button id="refresh">обновить</button>
-    </div>
+    <div class="meta" id="meta">загрузка курса…</div>
   </footer>
 
 </main>
