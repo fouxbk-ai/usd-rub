@@ -522,6 +522,8 @@
     activeField = 'rub';
     clearDefaultValue($rub);
   });
+  $usd.addEventListener('dblclick', () => resetConverter());
+  $rub.addEventListener('dblclick', () => resetConverter());
   $usd.addEventListener('blur', () => restoreZeroOnBlur($usd));
   $rub.addEventListener('blur', () => restoreZeroOnBlur($rub));
   $usd.addEventListener('input', () => {
