@@ -164,8 +164,7 @@
     font-feature-settings: "ss01";
     line-height: 1;
   }
-  #usd,
-  #rub {
+  .amount {
     background: transparent;
     border: none;
     outline: none;
@@ -181,22 +180,15 @@
     text-align: center;
     caret-color: var(--gold);
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
   }
-  #usd::placeholder,
-  #rub::placeholder { color: var(--cream-faint); }
-  #rub::placeholder { color: var(--gold); }
-  #usd:hover::placeholder,
-  #rub:hover::placeholder { color: var(--cream); }
-  #usd:focus::placeholder,
-  #rub:focus::placeholder,
-  #usd:focus:hover::placeholder,
-  #rub:focus:hover::placeholder { color: transparent; }
-  #usd::-webkit-outer-spin-button,
-  #usd::-webkit-inner-spin-button,
-  #rub::-webkit-outer-spin-button,
-  #rub::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  #usd,
-  #rub { -moz-appearance: textfield; }
+  .amount:empty::before { content: attr(data-placeholder); color: var(--cream-faint); }
+  #rub:empty::before { color: var(--gold); }
+  .amount:hover:empty::before { color: var(--cream); }
+  .amount:focus:empty::before,
+  .amount:focus:hover:empty::before { color: transparent; }
+  .amount .fraction { font-size: 0.5em; }
 
   .arrow {
     font-family: 'JetBrains Mono', monospace;
@@ -232,8 +224,8 @@
     border: 1px solid var(--gold-dim);
     color: var(--gold);
     padding: 6px 14px;
-    font-family: inherit;
-    font-size: inherit;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
     letter-spacing: inherit;
     text-transform: uppercase;
     cursor: pointer;
@@ -262,7 +254,7 @@
     main { padding: 20px 20px; }
     .body { padding-top: 7vh; }
     .header, .footer { gap: 14px; }
-    #usd, #rub { font-size: 64px; max-width: calc(100vw - 98px); }
+    .amount { font-size: 64px; max-width: calc(100vw - 98px); }
     .sym { font-size: 38px; }
   }
 </style>
@@ -286,7 +278,7 @@
     <div class="field input">
       <div class="field-label">вы платите</div>
       <div class="field-row">
-        <input id="usd" type="text" inputmode="decimal" placeholder="0" autocomplete="off">
+        <div id="usd" class="amount" contenteditable="plaintext-only" inputmode="decimal" role="textbox" aria-label="Доллары" data-placeholder="0"></div>
         <span class="sym">$</span>
       </div>
     </div>
@@ -296,7 +288,7 @@
     <div class="field output">
       <div class="field-label">вы получаете</div>
       <div class="field-row">
-        <input id="rub" type="text" inputmode="decimal" placeholder="0" autocomplete="off">
+        <div id="rub" class="amount" contenteditable="plaintext-only" inputmode="decimal" role="textbox" aria-label="Рубли" data-placeholder="0"></div>
         <span class="sym">₽</span>
       </div>
     </div>
@@ -346,8 +338,24 @@
       .replace(',', '.')
       .replace(/[^0-9.]/g, ''));
 
+  const getAmount = el => el.textContent.trim();
+
+  function setAmount(el, value) {
+    el.textContent = '';
+    if (value === '') return;
+    const [whole, fraction] = String(value).split(',');
+    el.append(document.createTextNode(whole));
+    if (fraction !== undefined) {
+      el.append(document.createTextNode(','));
+      const fractionEl = document.createElement('span');
+      fractionEl.className = 'fraction';
+      fractionEl.textContent = fraction;
+      el.append(fractionEl);
+    }
+  }
+
   function resizeInput(input) {
-    const length = Math.max(input.value.length, input.placeholder.length, 1);
+    const length = Math.max(getAmount(input).length, input.dataset.placeholder.length, 1);
     input.style.width = `${Math.min(length + 0.65, 18)}ch`;
   }
 
@@ -362,30 +370,32 @@
   };
 
   function updateFromUsd() {
-    if (rate == null) { $rub.value = '—'; return; }
-    const v = parseAmount($usd.value);
-    if (!isFinite(v) || $usd.value === '') {
-      $rub.value = '';
+    if (rate == null) { setAmount($rub, '—'); return; }
+    const usd = getAmount($usd);
+    const v = parseAmount(usd);
+    if (!isFinite(v) || usd === '') {
+      setAmount($rub, '');
       resizeInput($rub);
       return;
     }
     $rub.classList.add('flash');
     requestAnimationFrame(() => {
-      $rub.value = fmtRub(v * rate);
+      setAmount($rub, fmtRub(v * rate));
       resizeInput($rub);
       requestAnimationFrame(() => $rub.classList.remove('flash'));
     });
   }
 
   function updateFromRub() {
-    if (rate == null) { $usd.value = '—'; return; }
-    const v = parseAmount($rub.value);
-    if (!isFinite(v) || $rub.value === '') {
-      $usd.value = '';
+    if (rate == null) { setAmount($usd, '—'); return; }
+    const rub = getAmount($rub);
+    const v = parseAmount(rub);
+    if (!isFinite(v) || rub === '') {
+      setAmount($usd, '');
       resizeInput($usd);
       return;
     }
-    $usd.value = fmtUsd(v / rate);
+    setAmount($usd, fmtUsd(v / rate));
     resizeInput($usd);
   }
 
@@ -395,15 +405,22 @@
   }
 
   function clearDefaultValue(input) {
-    if (input.value === '0' || input.value === '0,00' || input.value === '—') {
-      input.value = '';
+    const value = getAmount(input);
+    if (value === '0' || value === '0,00' || value === '—') {
+      setAmount(input, '');
       resizeInput(input);
     }
   }
 
   function selectEnteredValue(input) {
-    if (input.value === '') return;
-    requestAnimationFrame(() => input.select());
+    if (getAmount(input) === '') return;
+    requestAnimationFrame(() => {
+      const range = document.createRange();
+      range.selectNodeContents(input);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
   }
 
   function restoreZeroOnBlur(input) {
@@ -412,8 +429,8 @@
 
   function resetConverter() {
     activeField = 'usd';
-    $usd.value = '';
-    $rub.value = '';
+    setAmount($usd, '');
+    setAmount($rub, '');
     resizeInputs();
     $usd.blur();
     $rub.blur();
