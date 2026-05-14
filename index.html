@@ -469,7 +469,7 @@
       rate = info.rate;
       $rateVal.textContent = fmtRate(info.rate);
       $source.textContent = `источник: ${info.source}`;
-      $meta.textContent = `обновлено ${fmtTime(info.time)}`;
+      $meta.textContent = `обновлено ${fmtTime(new Date())}`;
       update();
     } catch (e) {
       rate = null;
