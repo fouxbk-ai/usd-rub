@@ -322,6 +322,11 @@
       maximumFractionDigits: 2
     }).format(n);
 
+  const fmtInputAmount = n =>
+    new Intl.NumberFormat('ru-RU', {
+      maximumFractionDigits: 2
+    }).format(n);
+
   const fmtRate = n =>
     new Intl.NumberFormat('ru-RU', {
       minimumFractionDigits: 4,
@@ -340,6 +345,8 @@
       .replace(',', '.')
       .replace(/[^0-9.]/g, ''));
 
+  const isEditableAmount = value => /^\d+(?:[,.]\d*)?$/.test(value.replace(/\s/g, ''));
+
   const getAmount = el => el.textContent.trim();
 
   function setAmount(el, value) {
@@ -353,6 +360,30 @@
       fractionEl.className = 'fraction';
       fractionEl.textContent = fraction;
       el.append(fractionEl);
+    }
+  }
+
+  function formatTypedAmount(input) {
+    const raw = getAmount(input);
+    if (raw === '' || !isEditableAmount(raw)) return;
+    const normalized = raw.replace(/\s/g, '').replace('.', ',');
+    const hasTrailingDecimal = normalized.endsWith(',');
+    const fraction = normalized.split(',')[1] ?? '';
+    const value = parseAmount(normalized);
+    if (!isFinite(value)) return;
+    const whole = normalized.split(',')[0];
+    const formattedWhole = new Intl.NumberFormat('ru-RU', {
+      maximumFractionDigits: 0
+    }).format(Number(whole));
+    const formatted = fraction.length > 0 ? `${formattedWhole},${fraction}` : fmtInputAmount(value);
+    setAmount(input, hasTrailingDecimal ? `${formattedWhole},` : formatted);
+    if (hasTrailingDecimal || fraction.length > 0) {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(input);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
     }
   }
 
@@ -498,11 +529,13 @@
   $rub.addEventListener('blur', () => restoreZeroOnBlur($rub));
   $usd.addEventListener('input', () => {
     activeField = 'usd';
+    formatTypedAmount($usd);
     resizeInput($usd);
     updateFromUsd();
   });
   $rub.addEventListener('input', () => {
     activeField = 'rub';
+    formatTypedAmount($rub);
     resizeInput($rub);
     updateFromRub();
   });
