@@ -379,14 +379,16 @@
     }).format(Number(whole));
     const formatted = fraction.length > 0 ? `${formattedWhole},${fraction}` : fmtInputAmount(value);
     setAmount(input, hasTrailingDecimal ? `${formattedWhole},` : formatted);
-    if (hasTrailingDecimal || fraction.length > 0) {
-      const selection = window.getSelection();
-      const range = document.createRange();
-      range.selectNodeContents(input);
-      range.collapse(false);
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
+    moveCaretToEnd(input);
+  }
+
+  function moveCaretToEnd(input) {
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(input);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
   }
 
   function resizeInput(input) {
