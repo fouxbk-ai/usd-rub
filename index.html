@@ -473,10 +473,23 @@
     $rub.blur();
   }
 
+  async function fetchJson(url, timeoutMs = 5000) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const r = await fetch(url, {
+        cache: 'no-store',
+        signal: controller.signal
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return await r.json();
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
   async function loadCBR() {
-    const r = await fetch('https://www.cbr-xml-daily.ru/daily_json.js', { cache: 'no-store' });
-    if (!r.ok) throw new Error('CBR HTTP ' + r.status);
-    const d = await r.json();
+    const d = await fetchJson('https://www.cbr-xml-daily.ru/daily_json.js');
     return {
       rate: d.Valute.USD.Value,
       source: 'ЦБ РФ',
@@ -485,9 +498,7 @@
   }
 
   async function loadFallback() {
-    const r = await fetch('https://open.er-api.com/v6/latest/USD', { cache: 'no-store' });
-    if (!r.ok) throw new Error('Fallback HTTP ' + r.status);
-    const d = await r.json();
+    const d = await fetchJson('https://open.er-api.com/v6/latest/USD');
     return {
       rate: d.rates.RUB,
       source: 'open.er-api.com',
